@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세무사 상법 퀴즈</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#3498DB',
+                        'secondary-green': '#4CAF50',
+                        'accent-orange': '#E67E22',
+                        'danger-red': '#E74C3C',
+                        'light-blue': '#5DADE2',
+                        'gray-light': 'rgb(243 244 246)', /* Tailwind's gray-100 */
+                        'gray-medium': 'rgb(107 114 128)', /* Tailwind's gray-500 */
+                        'gray-dark': 'rgb(31 41 55)', /* Tailwind's gray-800 */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Inter font import */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            /* Light gray background for the page */
+        }
+
+        /* Specific styles for buttons to ensure text visibility on various backgrounds */
+        .choice-button {
+            color: black !important;
+            /* Ensure black text for choices */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl flex flex-col space-y-6">
+
+        <!-- Quiz Title -->
+        <h1 class="text-4xl font-bold text-primary-blue text-center mb-4">세무사 상법 퀴즈</h1>
+
+        <!-- Quiz Stats -->
+        <div class="flex justify-between items-center text-lg font-bold text-gray-800 mb-4">
+            <span id="total-label" class="flex-1 text-left">총 풀이: 0</span>
+            <span id="correct-label" class-1 text-center text-secondary-green">정답: 0</span>
+            <span id="incorrect-label" class="flex-1 text-right text-danger-red">오답: 0</span>
+        </div>
+
+        <!-- Question & Choices Scrollable Area -->
+        <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-inner overflow-y-auto"
+            style="max-height: 400px;">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-dark" id="question-label">Q1. 문제 내용이 여기에 표시됩니다.</h2>
+            <div id="choices-container" class="flex flex-col space-y-3">
+                <!-- Choice buttons will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Control Buttons (Check Answer / Next Question & End Quiz Early) -->
+        <div class="flex space-x-4 mt-6">
+            <button id="check-next-button"
+                class="flex-1 py-3 px-6 rounded-lg text-white text-xl font-bold bg-secondary-green hover:bg-green-600 transition duration-200 shadow-md">정답
+                확인</button>
+            <button id="end-early-button"
+                class="flex-1 py-3 px-6 rounded-lg text-white text-xl font-bold bg-danger-red hover:bg-red-600 transition duration-200 shadow-md">퀴즈
+                끝내기</button>
+        </div>
+
+        <!-- Result & Explanation Area -->
+        <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-inner overflow-y-auto"
+            style="max-height: 250px;">
+            <h3 class="text-xl font-bold text-gray-dark mb-2">결과 및 해설</h3>
+            <p id="feedback-label" class="text-lg font-semibold mb-2"></p>
+            <p id="explanation-label" class="text-gray-700 text-base"></p>
+        </div>
+
+        <!-- End Quiz Buttons (Restart & Review Incorrect) -->
+        <div id="end-quiz-buttons-container" class="flex flex-col space-y-4 mt-6 hidden">
+            <button id="restart-full-quiz-button"
+                class="py-3 px-6 rounded-lg text-white text-xl font-bold bg-primary-blue hover:bg-blue-600 transition duration-200 shadow-md">처음으로
+                (전체 퀴즈 다시 풀기)</button>
+            <button id="review-incorrect-button"
+                class="py-3 px-6 rounded-lg text-white text-xl font-bold bg-accent-orange hover:bg-orange-600 transition duration-200 shadow-md">오답
+                노트 풀기</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Quiz Data - Loaded directly from the JSON content you provided
+        // This makes the entire application self-contained in one HTML file.
+        const questionsDataString = `
+[
+    {
+        "question": "다음 중 상법상 주식회사의 설립에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "발기설립의 경우, 발기인이 주식 전부를 인수하여야 한다.",
+            "모집설립의 경우, 발기인은 주식의 일부만 인수할 수 있다.",
+            "설립 중의 회사는 법인격 없는 사단으로서 권리능력이 인정된다.",
+            "주식회사의 설립등기는 법원의 허가를 요한다.",
+            "설립등기 시 상호, 목적, 발행할 주식의 총수 등을 등기하여야 한다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "주식회사의 설립등기는 법원의 허가를 요하지 않습니다. 정관 작성, 주식 인수, 납입, 기관 구성 및 이사회의사록 작성 등의 절차를 거친 후 법무사나 변호사를 통해 등기소에 신청하는 절차입니다."
+    },
+    {
+        "question": "어음법상 '어음의 항변절단'에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "선의취득자가 어음을 취득한 경우, 전자의 항변을 대항할 수 없게 하는 원칙이다.",
+            "어음의 발행인이 백지어음으로 발행한 경우에만 적용된다.",
+            "어음채무자가 모든 종류의 항변을 주장하지 못하게 하는 것이다.",
+            "악의의 취득자에게도 항변절단의 효과가 미친다.",
+            "어음의 양도가 강행법규를 위반한 경우에도 항변절단이 적용된다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "'항변절단(Antithesis of defense)'은 어음의 선의취득자가 어음을 취득한 경우, 전자에 대한 항변을 어음채무자가 그 선의취득자에게 대항하지 못하게 하는 원칙입니다. 이는 어음의 유통성을 확보하기 위한 제도입니다. 백지어음에만 적용되는 것이 아니며, 악의의 취득자에게는 적용되지 않고, 강행법규 위반 등 중대한 하자의 경우에는 적용되지 않습니다."
+    },
+    {
+        "question": "상행위법상 매매에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "상인 간의 매매에서 매수인이 목적물을 수령한 경우, 즉시 검사하여 하자 발견 시 즉시 통지하여야 한다.",
+            "상인 간의 매매에서 목적물의 하자로 인한 매수인의 담보책임은 언제나 매도인에게 있다.",
+            "상인 간 매매는 민법상 매매 규정이 전적으로 배제된다.",
+            "매매의 목적물이 종류물인 경우, 매도인은 하자 있는 물건을 제공할 수 없다.",
+            "매수인의 목적물 검사 및 하자 통지 의무는 임의규정이므로 당사자 합의로 배제할 수 없다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "상법 제69조(매수인의 목적물의 검사와 통지의무)에 따라, 상인 간의 매매에 있어서 매수인이 목적물을 수령한 때에는 지체 없이 이를 검사하여야 하며, 하자 발견 시 즉시(지체 없이) 매도인에게 통지하여야 합니다. 이를 게을리하면 매수인은 계약해제, 대금감액 또는 손해배상을 청구하지 못합니다. 이는 강행규정이 아니므로 당사자 합의로 배제할 수 있습니다."
+    },
+    {
+        "question": "주식회사의 정관에 반드시 기재되어야 할 사항(절대적 기재사항)이 아닌 것은?",
+        "choices": [
+            "회사의 목적",
+            "상호",
+            "발행할 주식의 총수",
+            "액면주식의 액면총액",
+            "설립 시 발행하는 주식의 총수와 그 발행가액"
+        ],
+        "correct_answer_index": 3,
+        "explanation": "주식회사의 정관에 반드시 기재되어야 할 사항(절대적 기재사항)은 회사의 목적, 상호, 회사가 발행할 주식의 총수, 액면주식 발행 시 1주의 금액, 본점 소재지, 발행 주식의 총수, 설립 시 발행하는 주식의 총수와 그 발행가액, 공고 방법, 발기인의 성명·주민등록번호 및 주소 등입니다. 액면주식의 액면총액은 절대적 기재사항이 아닙니다. 1주의 금액이 절대적 기재사항입니다."
+    },
+    {
+        "question": "주식회사의 주주총회에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "주주총회는 매년 1회 일정한 시기에 소집하여야 한다.",
+            "이사회의 결의로도 주주총회를 소집할 수 있다.",
+            "특별결의사항은 출석한 주주의 의결권의 3분의 2 이상의 수와 발행주식총수의 3분의 1 이상의 수로써 의결한다.",
+            "주주는 총회 소집의 통지 전에 총회 결의의 목적인 사항에 대하여 서면으로 의결권을 행사할 수 있다.",
+            "주주총회의 의장은 대표이사가 되는 것이 일반적이다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "상법 제368조의3에 따르면, 주주는 주주총회의 소집 통지 전에 총회 결의의 목적인 사항에 대하여 서면으로 의결권을 행사할 수 있습니다. 이는 '서면결의'에 관한 내용으로, 통지 후가 아닌 통지 전에도 가능합니다."
+    },
+    {
+        "question": "다음 중 이사의 회사에 대한 책임에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "이사가 법령 또는 정관에 위반한 행위를 하거나 그 임무를 해태한 때에는 고의가 없으면 책임이 없다.",
+            "이사의 책임은 주주총회의 보통결의로 면제할 수 있다.",
+            "이사회 결의에 찬성한 이사는 항상 책임을 지지만, 반대한 이사는 책임을 지지 않는다.",
+            "회사가 이사에게 손해배상을 청구하는 경우, 감사는 회사를 대표한다.",
+            "소수주주는 이사의 책임을 추궁하기 위해 대표소송을 제기할 수 없다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "상법 제403조에 따라, 회사가 이사의 책임을 추궁하기 위해 소(訴)를 제기하는 경우 감사가 회사를 대표합니다. 이사의 회사에 대한 책임은 고의 또는 과실이 있으면 발생하며, 주주총회의 특별결의로 면제할 수 있습니다."
+    },
+    {
+        "question": "감사(監査) 또는 감사위원회에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "감사는 주주총회에서 선임한다.",
+            "감사의 임기는 취임 후 3년을 초과하지 못한다.",
+            "감사는 언제든지 이사에 대하여 영업에 관한 보고를 요구하거나 회사의 업무와 재산상태를 조사할 수 있다.",
+            "감사위원회는 이사회의 결의로만 설치할 수 있다.",
+            "감사는 회사 또는 자회사의 이사나 지배인을 겸하지 못한다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "상법 제542조의11에 따라, 감사위원회는 정관의 규정 또는 주주총회의 결의로 설치할 수 있습니다. 이사회 결의만으로는 설치할 수 없습니다."
+    },
+    {
+        "question": "신주발행에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "신주발행은 원칙적으로 이사회의 결의에 의한다.",
+            "정관으로 주주총회에서 신주발행을 결정하도록 정할 수 없다.",
+            "주주는 신주발행에 있어서 그가 가진 주식 수에 따라 신주의 배정을 받을 권리가 없다.",
+            "신주를 발행하는 경우 주식의 종류, 발행가액, 납입기일 등은 이사회에서 결정할 수 없다.",
+            "신주발행무효의 소는 발행일로부터 1년 이내에 제기하여야 한다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "상법 제416조에 따라, 주식회사의 신주발행은 원칙적으로 이사회의 결의에 의합니다. 다만, 정관으로 주주총회에서 결정하도록 정할 수 있으며, 주주는 원칙적으로 신주인수권을 가집니다."
+    },
+    {
+        "question": "주식의 포괄적 교환에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "주식의 포괄적 교환으로 회사를 설립하는 경우, 교환대가가 신설회사의 주식 발행총액을 초과할 수 없다.",
+            "주식의 포괄적 교환이란 회사가 다른 회사의 발행주식총수를 취득하고 그 다른 회사의 주주는 그 대가로 그 회사의 주식을 배정받는 것을 말한다.",
+            "완전모회사가 되는 회사는 교환대가로 신주를 발행하여야 한다.",
+            "반대주주의 주식매수청구권이 인정된다.",
+            "주식교환계약은 주주총회의 특별결의에 의해 승인되어야 한다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "주식의 포괄적 교환은 한 회사가 다른 회사의 발행주식총수를 취득하고, 그 다른 회사의 주주에게 그 대가로 자신의 주식 등을 교부하는 것을 말합니다. 즉, 자회사의 주주들이 모회사의 주주가 되는 구조입니다. 두 회사의 관계가 역으로 설명되어 있어 옳지 않습니다."
+    },
+    {
+        "question": "유한책임회사에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "유한책임회사는 무한책임사원과 유한책임사원으로 구성된다.",
+            "사원 전원의 동의가 없으면 정관을 변경할 수 없다.",
+            "사원은 지분 비율에 따라 손익분배에 참여한다.",
+            "유한책임회사는 채권자에 대하여 직접 책임을 진다.",
+            "사원은 원칙적으로 대외적인 회사를 대표할 권한을 가진다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "유한책임회사는 사원 전원이 유한책임사원으로 구성됩니다. 사원은 원칙적으로 지분 비율에 따라 손익분배에 참여하며, 정관변경은 사원 전원의 동의가 필요합니다. 회사는 유한책임사원과 별개의 법인격을 가지므로 채권자에 대해 직접 책임을 집니다. 사원은 원칙적으로 대외적 대표권이 없으며, 정관이나 총회에서 업무집행자를 선임하여 그가 회사를 대표합니다."
+    },
+    {
+        "question": "지배인에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "지배인은 상업사용인의 일종으로, 영업주에 갈음하여 영업에 관한 재판상 또는 재판 외의 모든 행위를 할 수 있다.",
+            "지배인은 영업주의 허락 없이는 다른 상인의 영업에 무한책임사원이 될 수 없다.",
+            "지배인의 선임과 해임은 등기사항이 아니다.",
+            "지배인의 대리권에 대한 제한은 선의의 제3자에게 대항할 수 없다.",
+            "지배인은 특정 사항에 대해서만 대리권을 가진다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "상법 제10조(지배인의 대리권)에 따라 지배인은 영업주에 갈음하여 그 영업에 관한 재판상 또는 재판 외의 모든 행위를 할 수 있습니다. 지배인은 영업주의 허락 없이는 다른 상인의 영업에 무한책임사원이 될 수 없으며, 지배인의 선임과 해임은 등기사항입니다. 지배인의 대리권에 대한 제한은 선의의 제3자에게 대항할 수 없습니다."
+    },
+    {
+        "question": "환어음에 관한 다음 설명 중 옳지 않은 것은?",
+        "choices": [
+            "환어음은 발행인, 지급인, 수취인의 3당사자로 구성된다.",
+            "환어음은 발행인의 수취인에 대한 지급위탁이 주된 내용이다.",
+            "지급인은 환어음의 발행인에게만 지급할 의무를 진다.",
+            "환어음에는 발행지의 기재가 반드시 필요하다.",
+            "환어음은 지시증권이므로 배서에 의하여 양도된다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "환어음에서 지급인은 어음상 채무를 부담하는 자로서, 수취인 또는 정당한 어음 소지인에게 지급할 의무를 집니다. 발행인에게만 지급하는 것이 아닙니다."
+    },
+    {
+        "question": "약속어음에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "약속어음은 발행인, 지급인, 수취인의 3당사자가 존재한다.",
+            "약속어음은 발행인이 직접 수취인에게 일정 금액의 지급을 약속하는 증권이다.",
+            "약속어음은 발행인이 인수를 하지 않아도 지급의무를 부담한다.",
+            "약속어음에는 인수의 문언이 필요하다.",
+            "약속어음은 수표와 유사하게 현금 지급만을 목적으로 한다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "약속어음은 발행인과 수취인의 2당사자 증권으로, 발행인이 직접 수취인에게 일정 금액의 지급을 약속하는 증권입니다. 인수는 환어음에만 해당되는 개념입니다."
+    },
+    {
+        "question": "어음의 배서에 관한 설명으로 가장 옳지 않은 것은?",
+        "choices": [
+            "배서는 어음상의 권리를 이전하는 행위이다.",
+            "배서는 어음의 이면에 기재하는 것이 원칙이다.",
+            "배서는 무조건적이어야 하며, 조건이 붙은 배서는 그 조건이 효력을 상실한다.",
+            "지급인에 대한 배서는 무효이다.",
+            "어음의 양도가 금지된 경우에도 배서에 의해 양도할 수 있다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "어음의 양도가 금지(배서금지문언)된 경우에는 배서에 의해 양도할 수 없습니다. 배서는 어음의 유통성을 확보하는 중요한 수단이지만, 발행인 또는 배서인이 배서를 금지할 수 있습니다."
+    },
+    {
+        "question": "수표에 관한 다음 설명 중 옳지 않은 것은?",
+        "choices": [
+            "수표는 발행일로부터 10일 이내에 지급제시하여야 한다.",
+            "수표의 지급인은 은행만 가능하다.",
+            "수표는 인수를 하지 않는다.",
+            "수표의 발행인은 지급인에게 지급할 자금이 없어도 수표를 발행할 수 있다.",
+            "수표는 횡선수표로 발행될 수 있다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "수표는 발행인이 지급인에게 지급할 자금이 있어야 발행할 수 있습니다(수표법 제3조). 자금 없는 수표의 발행은 부도 처리될 수 있습니다."
+    },
+    {
+        "question": "상법상 상사유치권에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "당사자 쌍방에 대한 상행위로 인한 채권이어야 한다.",
+            "변제기가 도래한 채권에 대해서만 인정된다.",
+            "채무자의 동의가 있어야 한다.",
+            "점유하고 있는 물건이 채무자의 소유이어야 한다.",
+            "목적물과 채권 사이에 결련성(관련성)이 없어도 인정될 수 있다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "상사유치권은 민법상 유치권과 달리, 채무자의 동의가 없어도 발생할 수 있습니다. 이는 상거래의 신속과 안전을 도모하기 위한 특칙입니다. 목적물과 채권 사이에 결련성(관련성)을 요구하지 않는 점도 민법과 다른 특징입니다."
+    },
+    {
+        "question": "상법상 대리상에 관한 다음 설명 중 가장 적절하지 않은 것은?",
+        "choices": [
+            "대리상은 특정 상인을 위하여 상시 대리행위 또는 중개행위를 영업으로 하는 자이다.",
+            "대리상은 영업주의 허락 없이는 자기 또는 제3자의 계산으로 영업주의 영업부류에 속한 거래를 할 수 없다.",
+            "대리상은 영업주와 대리상 계약을 해지할 수 있는 정당한 사유가 있는 경우에도 즉시 해지할 수 없다.",
+            "영업주는 대리상이 중개한 거래에 대하여 연대하여 책임을 진다.",
+            "대리상은 본래 대리권을 갖지 않는 경우가 일반적이며, 중개인적 성격이 강하다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "대리상은 '대리행위' 또는 '중개행위'를 영업으로 하는 자입니다. 명칭에서 알 수 있듯이 '대리'의 성격이 강하며, 중개인과 달리 영업주의 계산으로 거래를 '대리'하는 것이 주된 역할입니다. 따라서 본래 대리권을 갖지 않는다는 설명은 옳지 않습니다."
+    },
+    {
+        "question": "상법상 상호에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "상인은 상호를 자유롭게 정할 수 있다.",
+            "등기된 상호는 동일한 특별시·광역시·시·군에서는 동일 업종에 대하여 타인이 사용할 수 없다.",
+            "상호는 영업주의 성명을 사용하여야만 한다.",
+            "상호는 타인에게 양도할 수 있으며, 이 경우 영업의 양도와 함께 하여야 한다.",
+            "누구든지 부정한 목적으로 타인의 영업으로 오인할 만한 상호를 사용하지 못한다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "상호는 영업주의 성명을 반드시 사용해야 하는 것은 아닙니다. 법률이 정한 범위 내에서 자유롭게 정할 수 있습니다. 다만, 상호를 사용하는 상인은 등기할 수 있습니다."
+    },
+    {
+        "question": "상법상 상인의 의무에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "상인은 영업을 개시하면 상인으로서의 자격을 취득한다.",
+            "상인은 영업에 관하여 장부를 작성하여야 한다.",
+            "상인은 영업소를 설치하여야 한다.",
+            "상인은 상업장부를 10년간 보존하여야 한다.",
+            "상인은 지배인을 두어야 할 의무가 있다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "상법상 상인은 상업장부 작성 및 보존 의무, 영업소 설치 의무 등을 가집니다. 그러나 지배인을 반드시 두어야 할 의무는 없습니다. 지배인은 영업의 규모나 특성에 따라 선택적으로 선임할 수 있습니다."
+    },
+    {
+        "question": "주식의 종류에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "우선주란 이익배당이나 잔여재산 분배에 있어서 보통주보다 우선적 지위가 없는 주식을 말한다.",
+            "상환주식은 일정한 사유가 발생하면 회사가 주주로부터 다시 매입하여 소각할 수 있는 주식이다.",
+            "의결권 없는 주식은 발행할 수 없으며, 모든 주식은 반드시 의결권을 가진다.",
+            "전환주식은 보통주로만 전환할 수 있으며, 다른 종류주식으로는 전환할 수 없다.",
+            "액면주식은 액면가가 없고, 무액면주식은 액면가가 있는 주식을 말한다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "상환주식은 회사가 정관의 규정 등에 따라 특정 조건이 충족되면 주주로부터 주식을 다시 매입하여 소각할 수 있는 주식입니다. 이는 자본조달의 유연성을 높이는 수단이 됩니다."
+    },
+    {
+        "question": "주식회사의 자기주식 취득에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "회사는 원칙적으로 자기의 계산으로 자기주식을 취득하지 못한다.",
+            "배당가능이익이 있는 경우 주주총회의 결의로 자기주식을 취득할 수 있다.",
+            "주주에게 균등한 조건으로 자기주식 취득의 기회를 주어야 한다.",
+            "자기주식 취득은 회사의 자본금을 감소시킨다.",
+            "합병, 영업전부의 양수 등으로 자기주식을 취득하는 것은 허용된다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "자기주식 취득은 회사의 자본금을 직접 감소시키는 것이 아니라, 회사의 재산을 유출시켜 자본충실을 해칠 우려가 있습니다. 자본금을 감소시키는 것은 감자의 절차를 거쳐야 합니다."
+    },
+    {
+        "question": "주식회사의 해산 및 청산에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "주식회사는 합병에 의해서만 해산한다.",
+            "청산인은 해산 당시의 이사가 당연히 된다.",
+            "청산종결의 등기가 있으면 청산사무는 종료된다.",
+            "해산한 회사는 청산의 목적 범위 내에서만 권리능력이 있다.",
+            "채무를 초과하는 재산이 없는 경우에도 해산할 수 있다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "해산한 회사는 청산의 목적 범위 내에서만 권리능력을 가집니다(상법 제245조). 해산사유는 합병 외에도 총회결의, 파산, 법원의 명령 등 다양하며, 청산인은 주주총회에서 선임됩니다. 청산사무는 청산종결 등기가 아니라 실제 사무가 종료되었을 때 종료됩니다."
+    },
+    {
+        "question": "환어음의 '인수'에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "인수는 지급인이 환어음의 내용에 따라 지급할 것을 약속하는 행위이다.",
+            "지급인은 인수할 의무가 없으므로 인수를 거절할 수 있다.",
+            "인수는 어음의 전면 또는 이면에 기재하고 지급인이 서명하여야 한다.",
+            "인수는 무조건적이어야 하며, 조건이 붙은 인수는 그 조건이 무효로 된다.",
+            "인수한 지급인은 발행인에게만 어음금액을 지급할 의무를 진다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "인수한 지급인은 어음의 수취인 또는 정당한 어음 소지인에게 어음금액을 지급할 의무를 집니다. 발행인에게만 지급할 의무를 지는 것이 아닙니다."
+    },
+    {
+        "question": "상법상 상행위의 특칙에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "상인 간의 매매는 특별한 규정이 없는 한 매도인의 담보책임이 민법보다 가중된다.",
+            "상인 간의 채무는 원칙적으로 연대하여 변제할 책임이 있다.",
+            "상인이 영업을 위하여 하는 행위는 상행위로 본다.",
+            "당사자 일방에 대한 행위가 상행위인 때에는 그 행위는 쌍방에 대하여 상행위가 된다.",
+            "상사시효는 민사시효보다 단기이다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "상인 간의 매매에서 매수인의 목적물 검사 및 통지의무(상법 제69조)를 게을리하면 담보책임을 추궁할 수 없게 되므로, 오히려 매도인의 담보책임이 민법보다 경감되는 측면이 있습니다."
+    },
+    {
+        "question": "합병에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "회사의 합병은 주주총회의 특별결의로써 승인되어야 한다.",
+            "합병으로 인하여 회사가 신설되는 경우, 신설합병이라 한다.",
+            "합병 시 반대하는 주주는 주식매수청구권을 행사할 수 있다.",
+            "합병 계약 체결 후 채권자 보호 절차를 거치지 않아도 된다.",
+            "합병 후 소멸하는 회사의 권리의무는 합병 후 존속하는 회사 또는 신설되는 회사에 포괄승계된다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "합병 시 회사의 채권자에게 손해가 발생할 우려가 있으므로, 반드시 채권자 보호 절차(공고 및 최고)를 거쳐야 합니다(상법 제527조의5)."
+    },
+    {
+        "question": "주식회사 이사의 겸직금지에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "이사는 이사회의 승인 없이 자기 또는 제3자의 계산으로 회사의 영업부류에 속하는 거래를 할 수 있다.",
+            "이사가 겸직금지 의무를 위반한 경우, 회사는 이사의 행위를 추인할 수 없다.",
+            "이사의 겸직금지 의무는 이사 자신에게만 적용되며, 제3자에게는 적용되지 않는다.",
+            "이사가 겸직금지 의무를 위반하여 얻은 이득은 회사의 동의가 있으면 이사의 것으로 된다.",
+            "이사가 겸직금지 의무를 위반하여 이득을 얻은 경우, 그 이득은 회사의 이득으로 추정한다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "이사가 겸직금지 의무(경업금지, 회사기회 유용 금지 등)를 위반하여 이득을 얻은 경우, 상법 제397조의2에 따라 그 이득은 회사의 이득으로 추정합니다. 이는 이사의 충실 의무를 강화하기 위함입니다."
+    },
+    {
+        "question": "주식회사의 최저자본금 제도에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "상법상 주식회사의 최저자본금은 원칙적으로 1억원 이상이다.",
+            "최저자본금 제도 없이 회사를 설립할 수 있는 경우도 있다.",
+            "최저자본금 제도는 회사의 채권자를 보호하는 목적을 가진다.",
+            "최저자본금은 설립 시에만 요구되며, 설립 후에는 자본금이 감소해도 무방하다.",
+            "최저자본금에 미달하는 자본금으로 설립된 회사는 유한책임회사가 될 수 없다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "상법상 주식회사의 최저자본금 제도는 폐지되었습니다. 현재는 최저자본금에 대한 제한이 없으며, 1주 이상만 발행하면 회사를 설립할 수 있습니다."
+    },
+    {
+        "question": "전자어음법상 전자어음에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "전자어음은 실물 어음과 동일하게 종이 형태로 발행된다.",
+            "전자어음은 전자문서로 작성되며, 어음의 발행, 배서, 보증 등을 전산으로 처리한다.",
+            "전자어음은 전자어음 관리기관의 승인이 없으면 효력이 없다.",
+            "전자어음은 실물 어음과 달리 소멸시효가 적용되지 않는다.",
+            "전자어음은 오직 약속어음 형태로만 발행될 수 있다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "전자어음은 '전자어음의 발행 및 유통에 관한 법률'에 따라 전자문서 형태로 작성되고 유통됩니다. 실물 어음과 달리 종이 형태가 아니며, 발행, 배서, 보증 등 모든 절차가 전산 시스템을 통해 이루어집니다."
+    },
+    {
+        "question": "상법상 영업양도에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "영업양도는 상행위의 일종으로 본다.",
+            "영업양도는 등기가 필수적이다.",
+            "영업양수인은 특별한 사정이 없는 한 양도인의 상호를 계속 사용하지 못한다.",
+            "영업양도인은 일정 기간 동안 동일한 영업을 하지 못하는 경업금지 의무를 진다.",
+            "영업양도 시 채권자에 대한 보호 절차가 요구될 수 있다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "상법 제42조(상호를 속용하는 양수인의 책임)에 따르면, 영업양수인이 양도인의 상호를 계속 사용하는 경우, 양도인의 영업으로 인한 제3자의 채권에 대하여 양수인도 변제할 책임이 있습니다. 따라서 '계속 사용하지 못한다'는 설명은 옳지 않습니다."
+    },
+    {
+        "question": "상업사용인에 관한 설명으로 가장 적절한 것은?",
+        "choices": [
+            "지배인은 특정 영업소에서 영업주를 대리하여 영업에 관한 모든 행위를 하는 자이다.",
+            "부분적 포괄대리권을 가진 상업사용인은 특정 종류의 거래에 한하여 대리권을 가진다.",
+            "물건판매점포의 사용인은 그 판매에 관한 모든 권한을 갖는다.",
+            "상업사용인의 대리권에 대한 제한은 선의의 제3자에게 대항할 수 없다.",
+            "상업사용인은 영업주의 허락 없이 자기의 계산으로 동종 영업을 할 수 없다."
+        ],
+        "correct_answer_index": 0,
+        "explanation": "지배인은 상업사용인의 가장 포괄적인 형태로서, 영업주에 갈음하여 영업에 관한 재판상 또는 재판 외의 모든 행위를 할 수 있습니다. 부분적 포괄대리권을 가진 상업사용인은 특정 영업의 특정 종류에 한하여 대리권을 가지며, 물건판매점포의 사용인은 판매와 관련된 권한만 가집니다. 상업사용인의 대리권 제한은 선의의 제3자에게 대항할 수 없으며, 경업금지 의무를 지므로 영업주의 허락 없이 동종 영업을 할 수 없습니다."
+    },
+    {
+        "question": "주식회사의 사채(社債)에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "사채는 회사의 자본금을 구성하는 요소이다.",
+            "사채는 주주에게만 발행할 수 있다.",
+            "사채권자는 회사의 업무집행에 참여할 권한이 있다.",
+            "전환사채는 일정한 조건 하에 주식으로 전환할 수 있는 사채이다.",
+            "신주인수권부사채는 신주인수권을 행사해도 사채가 소멸하지 않는다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "전환사채(CB)는 사채권자의 청구에 의해 주식으로 전환될 수 있는 사채입니다. 사채는 자본금이 아닌 회사의 부채이며, 주주 외의 일반 투자자에게도 발행할 수 있고, 사채권자는 원칙적으로 회사의 업무집행에 참여할 수 없습니다. 신주인수권부사채(BW)는 신주인수권(워런트)을 행사해도 사채는 소멸하지 않고 별도로 존재합니다."
+    },
+    {
+        "question": "주식회사의 자본금 감소(감자)에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "자본금 감소는 주주총회의 특별결의에 의하여야 한다.",
+            "자본금 감소는 채권자 보호 절차를 거쳐야 한다.",
+            "감자는 주식의 병합이나 소각 등의 방법으로 이루어질 수 있다.",
+            "유상감자는 주주에게 아무런 대가 없이 주식만 소각하는 방식이다.",
+            "무상감자는 주주가 보유한 주식을 무상으로 감소시키는 방식이다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "유상감자는 회사가 주주에게 대가를 지급하고 주식을 소각하는 방식입니다. '아무런 대가 없이' 주식을 소각하는 것은 무상감자 또는 소각방식 감자에 해당합니다."
+    },
+    {
+        "question": "주식청약서에 반드시 기재되어야 할 사항이 아닌 것은?",
+        "choices": [
+            "회사가 발행할 주식의 총수",
+            "액면주식의 액면가액",
+            "발행주식의 총수와 그 종류 및 수",
+            "주식인수의 청약에 응하지 아니하면 실권한다는 뜻",
+            "주식의 종류와 수"
+        ],
+        "correct_answer_index": 0,
+        "explanation": "주식청약서에는 회사 설립 시 발행하는 주식의 종류와 수, 주식의 액면가, 납입기일, 주식인수청약에 응하지 않으면 실권한다는 뜻 등이 기재되어야 합니다. '회사가 발행할 주식의 총수'는 정관의 절대적 기재사항이지, 주식청약서의 필요적 기재사항이 아닙니다."
+    },
+    {
+        "question": "주주명부의 폐쇄 및 기준일 지정에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "회사는 의결권을 행사하거나 배당을 받을 주주를 확정하기 위해 주주명부를 폐쇄할 수 있다.",
+            "주주명부 폐쇄기간은 3월을 초과하지 못한다.",
+            "회사는 주주명부 폐쇄에 갈음하여 일정한 날을 정하여 그 날에 주주명부에 기재된 주주를 권리 행사 주주로 할 수 있다.",
+            "주주명부 폐쇄나 기준일 지정은 이사회의 결의로 한다.",
+            "주주명부 폐쇄 또는 기준일 지정은 2주 전에 공고하여야 한다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "상법 제354조에 따라, 주주명부 폐쇄 또는 기준일 지정은 2주 전이 아니라 3개월 전에 공고하여야 합니다."
+    },
+    {
+        "question": "이사의 보수청구권에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "이사의 보수는 정관에 정함이 없으면 이사회의 결의로 정한다.",
+            "이사의 보수는 주주총회의 보통결의로 정한다.",
+            "이사의 보수액은 반드시 금전으로만 지급되어야 한다.",
+            "회사는 정관에 보수 지급에 관한 규정이 없더라도 이사에게 보수를 지급할 의무가 있다.",
+            "퇴직한 이사에 대한 퇴직금은 보수에 해당하지 않는다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "상법 제388조에 따라 이사의 보수는 정관에 정함이 없는 경우 주주총회의 보통결의로 정합니다. 금전 외의 다른 방법으로도 지급할 수 있으며, 정관이나 주총결의가 없으면 보수청구권이 없습니다. 퇴직금도 보수의 일종으로 볼 수 있습니다."
+    },
+    {
+        "question": "주주대표소송에 관한 다음 설명 중 가장 옳지 않은 것은?",
+        "choices": [
+            "주주대표소송은 이사 또는 감사 등의 회사에 대한 책임을 추궁하는 소송이다.",
+            "발행주식총수의 100분의 1 이상에 해당하는 주식을 가진 주주가 제기할 수 있다.",
+            "소송을 제기하기 전에 회사에 대하여 서면으로 30일 이상의 기간을 정하여 소의 제기를 청구하여야 한다.",
+            "회사가 소 제기 청구를 받고도 청구한 날로부터 30일 이내에 소를 제기하지 아니한 경우, 주주가 직접 소송을 제기할 수 있다.",
+            "주주대표소송은 제소기간의 제한이 없다."
+        ],
+        "correct_answer_index": 4,
+        "explanation": "주주대표소송은 제소기간의 제한이 있습니다. 상법 제403조에 따라 이사의 책임 추궁 소는 이사가 책임이 있는 행위를 한 날로부터 1년 이내에 제기하여야 합니다."
+    },
+    {
+        "question": "명의개서에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "주식의 양도는 명의개서를 하여야만 효력이 발생한다.",
+            "명의개서란 주주명부에 주주의 성명과 주소를 기재하는 것을 말한다.",
+            "명의개서를 하지 않아도 주주는 회사에 대하여 주주권을 행사할 수 있다.",
+            "명의개서는 주식발행회사의 이사회의 결의를 요한다.",
+            "주주는 명의개서 청구를 자유롭게 할 수 없다."
+        ],
+        "correct_answer_index": 1,
+        "explanation": "명의개서는 주주명부에 주주의 성명과 주소를 기재하는 것으로, 주식 양도 시 회사에 대해 대항하기 위한 요건입니다. 명의개서를 하지 않으면 주주는 회사에 대해 주주권을 행사할 수 없습니다. 이사회 결의를 요하지 않으며, 주주는 원칙적으로 자유롭게 명의개서 청구를 할 수 있습니다."
+    },
+    {
+        "question": "주식회사의 감사보고서에 관한 다음 설명 중 옳은 것은?",
+        "choices": [
+            "감사는 정기총회 2주 전까지 이사에게 감사보고서를 제출하여야 한다.",
+            "감사보고서는 서면으로 작성하여야 한다.",
+            "감사는 재무제표와 영업보고서가 법령 및 정관에 따라 회사의 재산 및 경영 성과를 공정하게 표시하고 있는지를 감사한다.",
+            "감사보고서는 주주총회의 승인을 받아야 한다.",
+            "감사보고서는 외부에 공시되지 않는다."
+        ],
+        "correct_answer_index": 2,
+        "explanation": "감사는 회사의 업무와 회계에 대한 감사를 수행하며, 특히 재무제표와 영업보고서의 적정성을 감사합니다. 감사보고서는 이사에게 제출되어 주주총회에 보고되며, 그 내용이 재무제표와 함께 주주 및 채권자에게 공개됩니다. 2주 전이 아니라 정기총회 1주 전까지 이사에게 제출해야 합니다."
+    },
+    {
+        "question": "회사합병의 효력 발생시기에 관한 설명으로 옳지 않은 것은?",
+        "choices": [
+            "흡수합병의 경우, 합병계약서에 정한 합병기일에 효력이 발생한다.",
+            "신설합병의 경우, 신설회사의 설립등기를 한 때에 효력이 발생한다.",
+            "합병의 효력이 발생하면 소멸회사의 모든 권리의무는 존속회사에 포괄승계된다.",
+            "합병으로 인한 재산변동은 물권변동에 관한 등기를 요한다.",
+            "합병의 효력이 발생하면 소멸회사의 주주는 합병 후 존속회사 또는 신설회사의 주주가 된다."
+        ],
+        "correct_answer_index": 3,
+        "explanation": "회사의 합병으로 인한 재산 변동은 포괄승계되므로, 개별 자산에 대한 물권변동등기(예: 부동산 소유권 이전등기)는 효력 발생 요건이 아니라 대항 요건입니다. 즉, 등기 없이도 합병으로 소유권이 이전되지만, 제3자에게 대항하기 위해서는 등기가 필요합니다."
+    }
+]
+        `;
+
+        // Parse questions from the string
+        let allQuestions = [];
+        try {
+            // JSON.parse는 JSON 문자열을 파싱합니다. 백틱 문자열이므로 trim()으로 공백 제거
+            allQuestions = JSON.parse(questionsDataString.trim());
+        } catch (e) {
+            alert("Error loading questions: " + e.message + "\n콘솔에서 자세한 오류를 확인하세요.");
+            // If there's an error, prevent the app from crashing and display a message.
+            document.getElementById('question-label').textContent = "오류: 퀴즈 데이터를 로드할 수 없습니다. 콘솔(F12)을 확인하여 JSON 형식 오류를 수정해주세요.";
+            document.getElementById('choices-container').innerHTML = "";
+            console.error("JSON 파싱 오류:", e); // 개발자 도구 콘솔에 상세 오류 출력
+            // 문제 버튼 숨김
+            document.getElementById('check-next-button').style.display = 'none';
+            document.getElementById('end-early-button').style.display = 'none';
+            // return; // Removed the problematic 'return' statement
+        }
+
+        let questions = []; // Main questions list for the current session
+        let incorrectlyAnsweredQuestions = []; // Stores questions answered incorrectly
+        let currentQuestionIndex = 0; // Index for 'questions' list
+        let currentReviewQuestionIndex = 0; // Index for 'incorrectlyAnsweredQuestions' list
+        let selectedChoice = -1; // -1 means no choice selected
+        let isReviewMode = false; // Flag to indicate if in review mode
+
+        // Quiz statistics
+        let totalAttempted = 0;
+        let correctCount = 0;
+        let incorrectCount = 0;
+
+        // DOM elements
+        const questionLabel = document.getElementById('question-label');
+        const choicesContainer = document.getElementById('choices-container');
+        const checkNextButton = document.getElementById('check-next-button');
+        const endEarlyButton = document.getElementById('end-early-button');
+        const feedbackLabel = document.getElementById('feedback-label');
+        const explanationLabel = document.getElementById('explanation-label');
+        const totalLabel = document.getElementById('total-label');
+        const correctLabel = document.getElementById('correct-label');
+        const incorrectLabel = document.getElementById('incorrect-label');
+        const endQuizButtonsContainer = document.getElementById('end-quiz-buttons-container');
+        const restartFullQuizButton = document.getElementById('restart-full-quiz-button');
+        const reviewIncorrectButton = document.getElementById('review-incorrect-button');
+
+        // Event Listeners
+        checkNextButton.addEventListener('click', checkOrNextQuestion);
+        endEarlyButton.addEventListener('click', endQuizEarly);
+        restartFullQuizButton.addEventListener('click', restartQuiz);
+        reviewIncorrectButton.addEventListener('click', startReviewMode);
+
+        function shuffleQuestions() {
+            // Create a shallow copy to shuffle, so the original allQuestions remains untouched
+            questions = [...allQuestions];
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]]; // Swap
+            }
+        }
+
+        function updateStatsDisplay() {
+            totalLabel.textContent = `총 풀이: ${totalAttempted}`;
+            correctLabel.textContent = `정답: ${correctCount}`;
+            incorrectLabel.textContent = `오답: ${incorrectCount}`;
+        }
+
+        function loadQuestion() {
+            const targetQuestionsList = isReviewMode ? incorrectlyAnsweredQuestions : questions;
+            const currentIdxForList = isReviewMode ? currentReviewQuestionIndex : currentQuestionIndex;
+
+            // If all questions in the current list are exhausted or no questions exist
+            if (currentIdxForList >= targetQuestionsList.length || targetQuestionsList.length === 0) {
+                transitionToQuizEndState();
+                return;
+            }
+
+            const questionData = targetQuestionsList[currentIdxForList];
+            let qPrefix = `Q${currentIdxForList + 1}.`;
+            if (isReviewMode) {
+                qPrefix = `오답 Q${currentIdxForList + 1}.`;
+            }
+
+            questionLabel.textContent = `${qPrefix} ${questionData.question}`;
+            choicesContainer.innerHTML = ''; // Clear previous choices
+
+            // Dynamically create choice buttons
+            questionData.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = `${index + 1}. ${choice}`;
+                // Apply Tailwind classes for styling, including text-black
+                button.className = 'choice-button w-full py-3 px-4 bg-gray-200 text-black text-lg rounded-lg hover:bg-gray-300 transition duration-200 text-left';
+                button.onclick = () => selectChoice(index);
+                choicesContainer.appendChild(button);
+            });
+
+            feedbackLabel.textContent = '';
+            explanationLabel.textContent = '';
+            selectedChoice = -1; // Reset selected choice
+
+            // Reset all choice button colors and enable them
+            Array.from(choicesContainer.children).forEach(button => {
+                button.classList.remove('bg-light-blue', 'bg-secondary-green', 'bg-danger-red');
+                button.classList.add('bg-gray-200');
+                button.disabled = false; // Re-enable buttons
+            });
+
+            checkNextButton.textContent = isReviewMode ? '정답 확인 (오답 노트)' : '정답 확인';
+            checkNextButton.classList.remove('bg-primary-blue', 'hover:bg-blue-600', 'bg-orange-600', 'hover:bg-orange-700'); // Remove potential previous colors
+            checkNextButton.classList.add('bg-secondary-green', 'hover:bg-green-600');
+            checkNextButton.style.display = 'block'; // Show button
+            endEarlyButton.style.display = 'block'; // Show button
+            endQuizButtonsContainer.classList.add('hidden'); // Hide end quiz buttons
+
+            // Scroll to top of question/choices area
+            document.querySelector('div[style*="max-height: 400px"]').scrollTop = 0;
+        }
+
+        function selectChoice(index) {
+            selectedChoice = index;
+            // Reset all choice button colors and highlight selected
+            Array.from(choicesContainer.children).forEach((button, i) => {
+                button.classList.remove('bg-light-blue'); // Remove highlight from others
+                button.classList.add('bg-gray-200'); // Ensure default background
+                if (i === index) {
+                    button.classList.remove('bg-gray-200'); // Remove default before adding highlight
+                    button.classList.add('bg-light-blue'); // Highlight selected
+                }
+            });
+        }
+
+        function checkOrNextQuestion() {
+            // If button is currently "Check Answer"
+            if (checkNextButton.textContent.startsWith('정답 확인')) {
+                if (selectedChoice === -1) {
+                    alert('답을 먼저 선택해주세요!');
+                    return;
+                }
+                checkAnswer();
+            } else { // It's a "Next Question" or "Next Incorrect" button
+                if (isReviewMode) {
+                    currentReviewQuestionIndex++;
+                } else {
+                    currentQuestionIndex++;
+                }
+                loadQuestion();
+            }
+        }
+
+        function checkAnswer() {
+            const targetQuestionsList = isReviewMode ? incorrectlyAnsweredQuestions : questions;
+            const currentIdxForList = isReviewMode ? currentReviewQuestionIndex : currentQuestionIndex;
+
+            // Prevent errors if trying to check answer on a non-existent question (e.g., after quiz end)
+            if (currentIdxForList >= targetQuestionsList.length) {
+                return;
+            }
+
+            const questionData = targetQuestionsList[currentIdxForList];
+            const correctIndex = questionData.correct_answer_index;
+            const explanation = questionData.explanation;
+
+            // Disable all choice buttons after answering
+            Array.from(choicesContainer.children).forEach(button => {
+                button.disabled = true;
+            });
+
+            // Update stats only in regular quiz mode
+            if (!isReviewMode) {
+                totalAttempted++;
+                if (selectedChoice === correctIndex) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                    // Add to incorrectly answered list if not already there
+                    if (!incorrectlyAnsweredQuestions.includes(questionData)) {
+                        incorrectlyAnsweredQuestions.push(questionData);
+                    }
+                }
+            }
+            updateStatsDisplay();
+
+            // Highlight chosen and correct answers
+            const selectedButton = choicesContainer.children[selectedChoice];
+            const correctButton = choicesContainer.children[correctIndex];
+
+            // Remove existing highlight colors (e.g., light-blue from selection)
+            Array.from(choicesContainer.children).forEach(btn => btn.classList.remove('bg-light-blue'));
+
+            if (selectedChoice === correctIndex) {
+                feedbackLabel.textContent = '정답입니다!';
+                feedbackLabel.className = 'text-lg font-semibold mb-2 text-secondary-green';
+                selectedButton.classList.remove('bg-gray-200'); // Remove default gray
+                selectedButton.classList.add('bg-secondary-green'); // Green for correct
+            } else {
+                feedbackLabel.textContent = '오답입니다.';
+                feedbackLabel.className = 'text-lg font-semibold mb-2 text-danger-red';
+                selectedButton.classList.remove('bg-gray-200'); // Remove default gray
+                selectedButton.classList.add('bg-danger-red'); // Red for incorrect chosen
+                correctButton.classList.remove('bg-gray-200'); // Remove default gray
+                correctButton.classList.add('bg-secondary-green'); // Green for correct answer
+            }
+
+            explanationLabel.textContent = explanation;
+            checkNextButton.textContent = isReviewMode ? '다음 오답' : '다음 문제';
+            checkNextButton.classList.remove('bg-secondary-green', 'hover:bg-green-600', 'bg-danger-red', 'hover:bg-red-600'); // Remove old colors
+            checkNextButton.classList.add('bg-primary-blue', 'hover:bg-blue-600'); // Blue for next button
+        }
+
+        function restartQuiz() {
+            // Reset all state variables for a full restart
+            currentQuestionIndex = 0;
+            currentReviewQuestionIndex = 0;
+            isReviewMode = false;
+            incorrectlyAnsweredQuestions = []; // Clear incorrect list for a fresh start
+
+            totalAttempted = 0;
+            correctCount = 0;
+            incorrectCount = 0;
+            updateStatsDisplay();
+
+            shuffleQuestions(); // Shuffle all questions again
+            loadQuestion(); // Load the first question
+        }
+
+        function startReviewMode() {
+            if (incorrectlyAnsweredQuestions.length === 0) {
+                alert('현재 틀린 문제가 없습니다. 전체 퀴즈를 다시 시작합니다.');
+                restartQuiz();
+                return;
+            }
+
+            isReviewMode = true;
+            currentReviewQuestionIndex = 0;
+            // Optionally shuffle incorrect questions for review
+            for (let i = incorrectlyAnsweredQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [incorrectlyAnsweredQuestions[i], incorrectlyAnsweredQuestions[j]] = [incorrectlyAnsweredQuestions[j], incorrectlyAnsweredQuestions[i]];
+            }
+            loadQuestion();
+        }
+
+        function endQuizEarly() {
+            // Use a simple alert for now, as CustomTkinter's messagebox is not available in web
+            alert("현재 퀴즈가 종료되었습니다. 결과를 확인하고 오답 노트를 이용할 수 있습니다.");
+            transitionToQuizEndState();
+        }
+
+        function transitionToQuizEndState() {
+            // Hide quiz elements
+            checkNextButton.style.display = 'none';
+            endEarlyButton.style.display = 'none';
+            choicesContainer.innerHTML = ''; // Clear choices
+            feedbackLabel.textContent = '';
+            explanationLabel.textContent = ''; // Clear explanation
+
+            // Display final stats and end-quiz buttons
+            questionLabel.textContent = `퀴즈가 종료되었습니다! 총 ${totalAttempted}문제 중 ${correctCount}개 정답, ${incorrectCount}개 오답입니다. 수고하셨습니다.`;
+            endQuizButtonsContainer.classList.remove('hidden'); // Show end quiz button container
+
+            // Show/Hide review button based on incorrect answers count
+            if (incorrectlyAnsweredQuestions.length === 0) {
+                reviewIncorrectButton.style.display = 'none';
+            } else {
+                reviewIncorrectButton.style.display = 'block';
+            }
+            // Ensure restart button is always visible at the end
+            restartFullQuizButton.style.display = 'block';
+        }
+
+        // Initialize quiz on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (allQuestions.length > 0) {
+                shuffleQuestions();
+                loadQuestion();
+                updateStatsDisplay(); // Initial display of 0s
+            } else {
+                questionLabel.textContent = "Error: No questions loaded from data. Please check the 'questionsDataString' in the script.";
+                // Hide all buttons if no questions
+                checkNextButton.style.display = 'none';
+                endEarlyButton.style.display = 'none';
+                endQuizButtonsContainer.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>
